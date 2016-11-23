@@ -9,6 +9,7 @@ namespace SneakyPathProject
 {
     class Program
     {
+        // Global variables
         static int size;
         static int startingPoint;
         static int destination;
