@@ -12,7 +12,7 @@ brand = rand(2, 12)
 big = 1000 * n^3;
 
 // (4)
-MyDist =  int[n, n];
+MyDist[0] =  int[n, n];
 FirstStop[0] = int[n, n];
 LastStop[0] = int[n, n];
 PathTraffic = int[n];
