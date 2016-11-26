@@ -8,6 +8,9 @@ namespace SneakyPathProject
 {
     static class Helper
     {
+        public const string infinity = "\u221E";
+        public const int big = Int32.MaxValue;// Int32.MaxValue;
+
         /// <summary>
         /// Extract a string with comma delimiter
         /// </summary>
@@ -43,7 +46,14 @@ namespace SneakyPathProject
                 Console.Write('|');
                 for (int j = 0; j < colLength; j++)
                 {
-                    Console.Write(String.Format("{" + String.Format("0, {0}", numOfDigits + 1) + "}", inputMatrix[i, j]));
+                    if (inputMatrix[i, j] == big)
+                    {
+                        Console.Write(String.Format("{" + String.Format("0, {0}", numOfDigits + 1) + "}", infinity));
+                    }
+                    else
+                    {
+                        Console.Write(String.Format("{" + String.Format("0, {0}", numOfDigits + 1) + "}", inputMatrix[i, j]));
+                    }
                 }
                 Console.Write('|');
                 Console.Write(Environment.NewLine);
@@ -67,6 +77,10 @@ namespace SneakyPathProject
                     if (inputMatrix[i, j] == null)
                     {
                         Console.Write(String.Format("{" + String.Format("0, {0}", numOfDigits + 1) + "}", "na"));
+                    }
+                    else if (inputMatrix[i, j] == big)
+                    {
+                        Console.Write(String.Format("{" + String.Format("0, {0}", numOfDigits + 1) + "}", infinity));
                     }
                     else
                     {
@@ -114,7 +128,7 @@ namespace SneakyPathProject
             int arrayLength = inputQueueArray.Count();
 
             Console.Write('|');
-            
+
             foreach (var element in inputQueueArray)
             {
                 string Path = QueueToString(element);

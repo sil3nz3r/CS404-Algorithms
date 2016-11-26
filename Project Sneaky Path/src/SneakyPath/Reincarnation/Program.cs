@@ -43,7 +43,7 @@ namespace SneakyPathProject
         static void Main(string[] args)
         {
             // Read the file
-            List<string> inputFile = File.ReadAllLines(@"..\..\SneakyPathInputFile.txt").ToList();
+            List<string> inputFile = File.ReadAllLines(@"N50.txt").ToList();
             // Remove empty entries
             inputFile = inputFile.Where(s => !String.IsNullOrWhiteSpace(s)).Distinct().ToList();
 
@@ -153,7 +153,7 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(LastStop[k], 2);
 
             Console.WriteLine("Press any key to end iteration 1");
-            Console.ReadKey();
+            //Console.ReadKey();
 
             #endregion
 
@@ -230,7 +230,7 @@ namespace SneakyPathProject
             //Helper.PrintIntMatrix(FirstStop[1], 2);
 
             Console.WriteLine("Press any key to end iteration 2");
-            Console.ReadKey();
+            //Console.ReadKey();
 
             #endregion
 
@@ -283,7 +283,7 @@ namespace SneakyPathProject
                         ActualPath[ii, jj].Enqueue(i + 1);
                     } // while
 
-                    Console.WriteLine("For [{0}, {1}], the actual path is {2}", ii + 1, jj + 1, Helper.QueueToString(ActualPath[ii, jj]));
+                    //Console.WriteLine("For [{0}, {1}], the actual path is {2}", ii + 1, jj + 1, Helper.QueueToString(ActualPath[ii, jj]));
                 } // jj
             } // ii
 
@@ -303,7 +303,7 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(EdgeTraffic, 2);
 
             Console.WriteLine("Press any key to end iteration 3");
-            Console.ReadKey();
+            //Console.ReadKey();
 
             #endregion
 
@@ -353,7 +353,7 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(EdgeTraffic, 2);
 
             Console.WriteLine("Press any key to end iteration 4");
-            Console.ReadKey();
+            //Console.ReadKey();
 
             #endregion
 
@@ -389,7 +389,7 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(EdgeTraffic, 2);
 
             Console.WriteLine("Press any key to end iteration 5");
-            Console.ReadKey();
+            //Console.ReadKey();
 
             #endregion
 
@@ -447,7 +447,7 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(LastNewStop[k], 2);
 
             Console.WriteLine("Press any key to end iteration 6");
-            Console.ReadKey();
+            //Console.ReadKey();
 
             #endregion
 

@@ -27,11 +27,6 @@ namespace SneakyPathProject
         static int destination;
 
         /// <summary>
-        /// Represent infinity
-        /// </summary>
-        const int big = 10000;
-
-        /// <summary>
         /// Distance Calculation matrix
         /// </summary>
         static int[][,] MyDist;
@@ -105,7 +100,7 @@ namespace SneakyPathProject
             // Initialize matrices
             MyDist = new int[size + 1][,];
             MyDist[k] = new int[size, size];
-            Helper.InitMatrix(MyDist[k], big);
+            Helper.InitMatrix(MyDist[k], Helper.big);
 
             EdgeWeight = new int?[size, size];
 
@@ -171,6 +166,8 @@ namespace SneakyPathProject
             Console.WriteLine(String.Format("EdgeTraffic[{0}]: ", k));
             Helper.PrintIntMatrix(LoadMatrix, 4);
 
+            Console.WriteLine("\u221E");
+
             Console.WriteLine("Press any key to end iteration 1");
             Console.ReadKey();
 
@@ -191,8 +188,21 @@ namespace SneakyPathProject
                     {
                         // First route: go from one node to the other
                         int directPath = MyDist[k - 1][i, j];
+
                         // Second route: go to a intermediate node k
-                        int altPath = MyDist[k - 1][i, k - 1] + MyDist[k - 1][k - 1, j];
+                        int costToK = MyDist[k - 1][i, k - 1];
+                        int costFromK = MyDist[k - 1][k - 1, j];
+                        int altPath = 0;
+
+                        // Prevent integer overflow
+                        if (costToK == Helper.big || costFromK == Helper.big)
+                        {
+                            altPath = Helper.big;
+                        }
+                        else
+                        {
+                            altPath = costToK + costFromK;
+                        }
 
                         // Compare the two routes, take the smaller
                         // or favors the direct option in case of tie
@@ -233,16 +243,14 @@ namespace SneakyPathProject
 
             ShortestPaths = new Queue<int>[size, size];
 
-            // The path has to start from the current node
-            for (int iii = 0; iii < size; iii++)
+            for (int ii = 0; ii < size; ii++)
             {
-                for (int jjj = 0; jjj < size; jjj++)
+                for (int jj = 0; jj < size; jj++)
                 {
-                    ShortestPaths[iii, jjj] = new Queue<int>();
-                    ShortestPaths[iii, jjj].Enqueue(iii + 1);
+                    ShortestPaths[ii, jj] = new Queue<int>();
+                    ShortestPaths[ii, jj].Enqueue(ii + 1);
                 }
             }
-
             // Calculate the load on each edge using the previous calculated app-pairs shortest paths
             for (int ii = 0; ii < size; ii++)
             {
@@ -272,7 +280,7 @@ namespace SneakyPathProject
             Console.WriteLine(String.Format("MyDist[{0}]: ", size));
             Helper.PrintIntMatrix(MyDist[size], 2);
 
-            Console.WriteLine(String.Format("ActualPath: ", k));
+            Console.WriteLine(String.Format("ShortestPaths: ", k));
             Helper.PrintQueueMatrix(ShortestPaths, 10);
 
             Console.WriteLine(String.Format("PathTraffic: ", k));
@@ -320,7 +328,7 @@ namespace SneakyPathProject
             for (int v = 0; v < size; v++)
             {
                 visited[v] = false;
-                distance[v] = big;
+                distance[v] = Helper.big;
             }
 
             // MinHeap for the algorithm
@@ -370,10 +378,10 @@ namespace SneakyPathProject
                     }
 
                     // There is no edge between the current node and the potential node
-                    // big and null mean the same thing
-                    // Prevent overflow If use big as max int value
+                    // Helper.big and null mean the same thing
+                    // Prevent overflow If use Helper.big as max int value
                     int? potentialDist = Graph[selMin - 1, i];
-                    if (potentialDist == big || potentialDist == null)
+                    if (potentialDist == Helper.big || potentialDist == null)
                     {
                         continue;
                     }
