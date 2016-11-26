@@ -29,7 +29,7 @@ namespace SneakyPathProject
         /// <summary>
         /// Represent infinity
         /// </summary>
-        const int big = 100000;
+        const int big = 10000;
 
         /// <summary>
         /// Distance Calculation matrix
@@ -44,12 +44,12 @@ namespace SneakyPathProject
         /// <summary>
         /// The Flow matrix F representing the traffic on the path
         /// </summary>
-        static int[,] PathTraffic;
+        static int[,] FlowMatrix;
 
         /// <summary>
         /// The Load matrix L representing the traffic on each edge
         /// </summary>
-        static int?[,] EdgeTraffic;
+        static int?[,] LoadMatrix;
 
         /// <summary>
         /// First place i stops
@@ -83,7 +83,7 @@ namespace SneakyPathProject
         static void Main(string[] args)
         {
             // Read the file
-            List<string> inputFile = File.ReadAllLines(@"..\..\SneakyPathInputFile.txt").ToList();
+            List<string> inputFile = File.ReadAllLines("N6.txt").ToList();
             // Remove empty entries
             inputFile = inputFile.Where(s => !String.IsNullOrWhiteSpace(s)).Distinct().ToList();
 
@@ -100,7 +100,7 @@ namespace SneakyPathProject
             #region Iteration 1: Initialization, k = 0
             k = 0;
 
-            Console.WriteLine("\n\n*** Iteration 1: Initialization, k = {0}", k);
+            Console.WriteLine("\n\n*** Iteration 1: Initialization");
 
             // Initialize matrices
             MyDist = new int[size + 1][,];
@@ -109,14 +109,14 @@ namespace SneakyPathProject
 
             EdgeWeight = new int?[size, size];
 
-            PathTraffic = new int[size, size];
+            FlowMatrix = new int[size, size];
 
-            EdgeTraffic = new int?[size, size];
+            LoadMatrix = new int?[size, size];
 
             FirstStop = new int[size + 1][,];
             FirstStop[k] = new int[size, size];
 
-            // Extract input file
+            // Extract the rest of the input file
             foreach (string line in inputFile)
             {
                 if (String.IsNullOrEmpty(line))
@@ -136,27 +136,17 @@ namespace SneakyPathProject
                 }
                 else if (values[0] == "F") // Flow matrix F
                 {
-                    PathTraffic[i, j] = Int32.Parse(values[3]);
+                    FlowMatrix[i, j] = Int32.Parse(values[3]);
                 }
                 else // This line has an incorrect format
                 {
                     Console.WriteLine("There is something wrong with the line: \n" + line);
                 }
-                //Console.WriteLine(line);
 
                 // EdgeTraffic does not have to be initialized right now
-                EdgeTraffic[i, j] = 0;
+                LoadMatrix[i, j] = 0;
                 // FirstStop is assumed to be the direct destination
                 FirstStop[k][i, j] = j + 1;
-
-                //// If the distane is larger than 10, deem it big
-                //// This is for simplicity sake
-                //if (MyDist[k][i, j] > 10)
-                //{
-                //    MyDist[k][i, j] = big;
-                //    FirstStop[k][i, j] = -1;
-                //    EdgeWeight[i, j] = null;
-                //}
             }
 
             // Prevent circular link
@@ -164,8 +154,8 @@ namespace SneakyPathProject
             {
                 MyDist[k][i, i] = 0;
                 FirstStop[k][i, i] = 0;
-                EdgeTraffic[i, i] = 0;
-                PathTraffic[i, i] = 0;
+                LoadMatrix[i, i] = 0;
+                FlowMatrix[i, i] = 0;
                 EdgeWeight[i, i] = 0;
             }
 
@@ -176,10 +166,10 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(EdgeWeight, 2);
 
             Console.WriteLine(String.Format("PathTraffic[{0}]: ", k));
-            Helper.PrintIntMatrix(PathTraffic, 2);
+            Helper.PrintIntMatrix(FlowMatrix, 2);
 
             Console.WriteLine(String.Format("EdgeTraffic[{0}]: ", k));
-            Helper.PrintIntMatrix(EdgeTraffic, 2);
+            Helper.PrintIntMatrix(LoadMatrix, 4);
 
             Console.WriteLine("Press any key to end iteration 1");
             Console.ReadKey();
@@ -187,43 +177,38 @@ namespace SneakyPathProject
             #endregion
 
             #region Iteration 2: Finding the all-pairs shortest paths
-            Console.WriteLine("\n\n*** Iteration 2: k = 1 to {0}", size);
+            Console.WriteLine("\n\n*** Iteration 2: Finding the all-pairs shortest paths", size);
 
+            // Using Floyd-Warshall, find the all-pairs shortest paths
             for (k = 1; k <= size; k++)
             {
                 MyDist[k] = new int[size, size];
                 FirstStop[k] = new int[size, size];
 
-                Console.WriteLine("k = {0}", k);
-
                 for (int i = 0; i < size; i++)
                 {
-                    //Console.WriteLine("  i = {0}", i + 1);
                     for (int j = 0; j < size; j++)
                     {
-                        //Console.WriteLine("    j = {0}", j + 1);
                         // First route: go from one node to the other
-                        int optionDirect = MyDist[k - 1][i, j];
+                        int directPath = MyDist[k - 1][i, j];
                         // Second route: go to a intermediate node k
-                        int optionViaK = MyDist[k - 1][i, k - 1] + MyDist[k - 1][k - 1, j];
+                        int altPath = MyDist[k - 1][i, k - 1] + MyDist[k - 1][k - 1, j];
 
                         // Compare the two routes, take the smaller
                         // or favors the direct option in case of tie
                         // We still use FirstStop and LastStop
                         // FirstStop
-                        if (optionDirect <= optionViaK)
+                        if (directPath <= altPath)
                         {
                             // Direct route
-                            MyDist[k][i, j] = optionDirect;
+                            MyDist[k][i, j] = directPath;
                             FirstStop[k][i, j] = FirstStop[k - 1][i, j];
-                            //Console.WriteLine("    Direct: then {0}, {1}", optionDirect, optionViaK);
                         }
                         else
                         {
                             // intermediate route
-                            MyDist[k][i, j] = optionViaK;
+                            MyDist[k][i, j] = altPath;
                             FirstStop[k][i, j] = FirstStop[k - 1][i, k - 1];
-                            //Console.WriteLine("    Via K: else {0}, {1}", optionDirect, optionViaK);
                         }
                     } // j
                 } // i
@@ -258,6 +243,7 @@ namespace SneakyPathProject
                 }
             }
 
+            // Calculate the load on each edge using the previous calculated app-pairs shortest paths
             for (int ii = 0; ii < size; ii++)
             {
                 for (int jj = 0; jj < size; jj++)
@@ -269,25 +255,19 @@ namespace SneakyPathProject
                     {
                         int ifrom = i;
                         i = FirstStop[size][i, j] - 1;
-                        EdgeTraffic[ifrom, i] = EdgeTraffic[ifrom, i] + PathTraffic[ii, jj];
+                        LoadMatrix[ifrom, i] = LoadMatrix[ifrom, i] + FlowMatrix[ii, jj];
+
                         ShortestPaths[ii, jj].Enqueue(i + 1);
                     } // while
 
-                    Console.WriteLine("For [{0}, {1}], the shortest path is {2}", ii + 1, jj + 1, Helper.QueueToString(ShortestPaths[ii, jj]));
-                } // jj
-                EdgeTraffic[ii, ii] = null;
-            } // ii
-
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    if (MyDist[0][i, j] == big)
+                    if (EdgeWeight[ii, jj] == null)
                     {
-                        EdgeTraffic[i, j] = null;
+                        LoadMatrix[ii, jj] = null;
                     }
-                }
-            }
+
+                    //Console.WriteLine("For [{0}, {1}], the shortest path is {2}", ii + 1, jj + 1, Helper.QueueToString(ShortestPaths[ii, jj]));
+                } // jj
+            } // ii
 
             Console.WriteLine(String.Format("MyDist[{0}]: ", size));
             Helper.PrintIntMatrix(MyDist[size], 2);
@@ -296,106 +276,37 @@ namespace SneakyPathProject
             Helper.PrintQueueMatrix(ShortestPaths, 10);
 
             Console.WriteLine(String.Format("PathTraffic: ", k));
-            Helper.PrintIntMatrix(PathTraffic, 2);
+            Helper.PrintIntMatrix(FlowMatrix, 2);
 
             Console.WriteLine(String.Format("EdgeTraffic: ", k));
-            Helper.PrintIntMatrix(EdgeTraffic, 2);
+            Helper.PrintIntMatrix(LoadMatrix, 4);
 
             Console.WriteLine("Press any key to end iteration 3");
             Console.ReadKey();
 
             #endregion
 
-            #region Iteration 4: Find all the paths
+            #region Iteration 5: Find the Sneaky Path (the path with the least amount of traffic)
 
-            Console.WriteLine("\n\n*** Iteration 4: Find all the paths");
+            Console.WriteLine("\n\n*** Iteration 4: Find the Sneaky Path");
 
-            allPathsWithTraffic = new int?[size, size];
+            Queue<int> shortestPath = DijstraSPA(LoadMatrix, source, destination);
 
-            //FindAllPaths(source, destination);
+            if (shortestPath != null)
+            {
+                Console.WriteLine("Sneaky Path: {0}", Helper.QueueToString(shortestPath));
+            }
+            else
+            {
+                Console.WriteLine("Could not find the Sneaky Path");
+            }
 
             Console.WriteLine("Press any key to end iteration 4");
             Console.ReadKey();
 
             #endregion
 
-            #region Iteration 5: Find the Sneaky Path (the path with the least amount of traffic)
-
-            Console.WriteLine("\n\n*** Iteration 5: Find the Sneaky Path");
-
-            Queue<int> shortestPath = DijstraSPA(EdgeTraffic, source, destination);
-
-            Console.WriteLine("Sneaky Path: {0}", Helper.QueueToString(shortestPath));
-
-            Console.WriteLine("Press any key to end iteration 5");
-            Console.ReadKey();
-
-            #endregion
-
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="d"></param>
-        static void FindAllPaths(int s, int d)
-        {
-            // Temporary array to avoid cycle
-            bool[] visitedTemp = new bool[size];
-            // Temporary path array
-            int[] pathTemp = new int[size];
-            // Temporary Index
-            int indexTemp = 0;
-
-            for (int i = 0; i < size; i++)
-            {
-                visitedTemp[i] = false;
-            }
-
-            FindAllPathsUtil(s - 1, d - 1, visitedTemp, pathTemp, indexTemp);
-        }
-
-        static void FindAllPathsUtil(int current, int destination, bool[] visited, int[] path, int path_index)
-        {
-            // Modified DFS to find all the paths in a graph
-            visited[current] = true;
-            path[path_index] = current + 1;
-            path_index++;
-
-            if (current == destination)
-            {
-                Queue<int> tempPath = new Queue<int>();
-                for (int i = 0; i < path_index; i++)
-                {
-                    int currentNode = path[i];
-                    if (i > 0)
-                    {
-                        int previousNode = path[i - 1];
-                        allPathsWithTraffic[previousNode - 1, currentNode - 1] = EdgeTraffic[previousNode - 1, currentNode - 1];
-                    }
-                    tempPath.Enqueue(currentNode);
-                    Console.Write(currentNode);
-                }
-                allPaths.Add(tempPath);
-                Console.Write(Environment.NewLine);
-            }
-            else
-            {
-                for (int i = 0; i < size; i++)
-                {
-                    if (MyDist[0][current, i] != 0
-                        && MyDist[0][current, i] != big
-                        && !visited[i])
-                    {
-                        FindAllPathsUtil(i, destination, visited, path, path_index);
-                    }
-                }
-            }
-
-            path_index--;
-            visited[current] = false;
-        } // FindAllPathsUtil
 
         public static Queue<int> DijstraSPA(int?[,] Graph, int startNode, int EndNode)
         {
@@ -478,6 +389,8 @@ namespace SneakyPathProject
                     }
                 } // for loop
             } // while loop
+
+            // Cannot find the path, return null
             return null;
         } // DijstraSPA
     }
