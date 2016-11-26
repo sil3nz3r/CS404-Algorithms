@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -47,34 +47,23 @@ namespace SneakyPathProject
         static int[,] PathTraffic;
 
         /// <summary>
-        /// The Load matrix L representing the traffic on each edge
+        /// Traffic on each edge
         /// </summary>
         static int?[,] EdgeTraffic;
-
         /// <summary>
         /// First place i stops
         /// </summary>
         static int[][,] FirstStop;
+        static int?[] Parent;
+        static int[] Distance;
 
-        /// <summary>
-        /// Matrix of shortest paths
-        /// </summary>
-        static Queue<int>[,] ShortestPaths;
+        static int[][,] FlowPerEdge;
+        static int[][,] FirstNewStop;
 
-        /// <summary>
-        /// All the paths from the source to the destination
-        /// </summary>
+        static Queue<int>[,] ActualPath;
+
         static List<Queue<int>> allPaths = new List<Queue<int>>();
 
-        /// <summary>
-        /// Sneaky Path
-        /// </summary>
-        static Queue<int> SneakyPath = new Queue<int>();
-
-        static int?[,] allPathsWithTraffic;
-        /// <summary>
-        /// multipurpose counting variable
-        /// </summary>
         static int k;
 
         #endregion global variables
@@ -149,14 +138,14 @@ namespace SneakyPathProject
                 // FirstStop is assumed to be the direct destination
                 FirstStop[k][i, j] = j + 1;
 
-                //// If the distane is larger than 10, deem it big
-                //// This is for simplicity sake
-                //if (MyDist[k][i, j] > 10)
-                //{
-                //    MyDist[k][i, j] = big;
-                //    FirstStop[k][i, j] = -1;
-                //    EdgeWeight[i, j] = null;
-                //}
+                // If the distane is larger than 10, deem it big
+                // This is for simplicity sake
+                if (MyDist[k][i, j] > 10)
+                {
+                    MyDist[k][i, j] = big;
+                    FirstStop[k][i, j] = -1;
+                    EdgeWeight[i, j] = null;
+                }
             }
 
             // Prevent circular link
@@ -170,7 +159,7 @@ namespace SneakyPathProject
             }
 
             Console.WriteLine(String.Format("MyDist: "));
-            Helper.PrintIntMatrix(MyDist[k], 6);
+            Helper.PrintIntMatrix(MyDist[k], 4);
 
             Console.WriteLine(String.Format("EdgeWeight[{0}]: ", k));
             Helper.PrintIntMatrix(EdgeWeight, 2);
@@ -186,77 +175,49 @@ namespace SneakyPathProject
 
             #endregion
 
-            #region Iteration 2: Finding the all-pairs shortest paths
-            Console.WriteLine("\n\n*** Iteration 2: k = 1 to {0}", size);
+            #region Iteration 2: Find all the paths
 
-            for (k = 1; k <= size; k++)
-            {
-                MyDist[k] = new int[size, size];
-                FirstStop[k] = new int[size, size];
+            Console.WriteLine("\n\n*** Iteration 2: Find all the paths");
 
-                Console.WriteLine("k = {0}", k);
-
-                for (int i = 0; i < size; i++)
-                {
-                    //Console.WriteLine("  i = {0}", i + 1);
-                    for (int j = 0; j < size; j++)
-                    {
-                        //Console.WriteLine("    j = {0}", j + 1);
-                        // First route: go from one node to the other
-                        int optionDirect = MyDist[k - 1][i, j];
-                        // Second route: go to a intermediate node k
-                        int optionViaK = MyDist[k - 1][i, k - 1] + MyDist[k - 1][k - 1, j];
-
-                        // Compare the two routes, take the smaller
-                        // or favors the direct option in case of tie
-                        // We still use FirstStop and LastStop
-                        // FirstStop
-                        if (optionDirect <= optionViaK)
-                        {
-                            // Direct route
-                            MyDist[k][i, j] = optionDirect;
-                            FirstStop[k][i, j] = FirstStop[k - 1][i, j];
-                            //Console.WriteLine("    Direct: then {0}, {1}", optionDirect, optionViaK);
-                        }
-                        else
-                        {
-                            // intermediate route
-                            MyDist[k][i, j] = optionViaK;
-                            FirstStop[k][i, j] = FirstStop[k - 1][i, k - 1];
-                            //Console.WriteLine("    Via K: else {0}, {1}", optionDirect, optionViaK);
-                        }
-                    } // j
-                } // i
-            } // k
-
-            k = 6;
-            Console.WriteLine("> k = {0}", k);
-            Console.WriteLine(String.Format("MyDist[{0}]: ", k));
-            Helper.PrintIntMatrix(MyDist[k], 4);
-
-            Console.WriteLine(String.Format("FirstStop[{0}]: ", k));
-            Helper.PrintIntMatrix(FirstStop[k], 2);
+            FindAllPaths(source, destination);
 
             Console.WriteLine("Press any key to end iteration 2");
             Console.ReadKey();
 
             #endregion
 
-            #region Iteration 3: Calculate the traffic on each edge
+            #region Iteration 3: Calculate the flow of each paths
 
-            Console.WriteLine("\n\n*** Iteration 3: Calculate the traffic on each edge");
+            Console.WriteLine("\n\n*** Iteration 3: Find the actual path");
 
-            ShortestPaths = new Queue<int>[size, size];
+            //Hops = new int[size, size];
+            ActualPath = new Queue<int>[size, size];
 
             // The path has to start from the current node
             for (int iii = 0; iii < size; iii++)
             {
                 for (int jjj = 0; jjj < size; jjj++)
                 {
-                    ShortestPaths[iii, jjj] = new Queue<int>();
-                    ShortestPaths[iii, jjj].Enqueue(iii + 1);
+                    ActualPath[iii, jjj] = new Queue<int>();
+                    ActualPath[iii, jjj].Enqueue(iii + 1);
                 }
             }
+
+            //Queue<int> ShortestPath = new Queue<int>();
+            //ShortestPath.Enqueue(startingPoint);
+
+            //int a = startingPoint - 1;
+            //int b = destination - 1;
+
+            //while (FirstStop[size][a, b] != 0)
+            //{
+            //    ShortestPath.Enqueue(FirstStop[size][a, b]);
+            //    int ifrom = a;
+            //    a = b;
+            //    b = FirstStop[size][ifrom, b] - 1;
+            //    //Hops[ii, jj] = Hops[ii, jj] + 1;
+            //    EdgeTraffic[ifrom, i] = EdgeTraffic[ifrom, i] + PathTraffic[ii, jj];
+            //} // while
 
             for (int ii = 0; ii < size; ii++)
             {
@@ -269,31 +230,20 @@ namespace SneakyPathProject
                     {
                         int ifrom = i;
                         i = FirstStop[size][i, j] - 1;
+                        //Hops[ii, jj] = Hops[ii, jj] + 1;
                         EdgeTraffic[ifrom, i] = EdgeTraffic[ifrom, i] + PathTraffic[ii, jj];
-                        ShortestPaths[ii, jj].Enqueue(i + 1);
+                        ActualPath[ii, jj].Enqueue(i + 1);
                     } // while
 
-                    Console.WriteLine("For [{0}, {1}], the shortest path is {2}", ii + 1, jj + 1, Helper.QueueToString(ShortestPaths[ii, jj]));
+                    Console.WriteLine("For [{0}, {1}], the actual path is {2}", ii + 1, jj + 1, Helper.QueueToString(ActualPath[ii, jj]));
                 } // jj
-                EdgeTraffic[ii, ii] = null;
             } // ii
-
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    if (MyDist[0][i, j] == big)
-                    {
-                        EdgeTraffic[i, j] = null;
-                    }
-                }
-            }
 
             Console.WriteLine(String.Format("MyDist[{0}]: ", size));
             Helper.PrintIntMatrix(MyDist[size], 2);
 
             Console.WriteLine(String.Format("ActualPath: ", k));
-            Helper.PrintQueueMatrix(ShortestPaths, 10);
+            Helper.PrintQueueMatrix(ActualPath, 10);
 
             Console.WriteLine(String.Format("PathTraffic: ", k));
             Helper.PrintIntMatrix(PathTraffic, 2);
@@ -302,32 +252,6 @@ namespace SneakyPathProject
             Helper.PrintIntMatrix(EdgeTraffic, 2);
 
             Console.WriteLine("Press any key to end iteration 3");
-            Console.ReadKey();
-
-            #endregion
-
-            #region Iteration 4: Find all the paths
-
-            Console.WriteLine("\n\n*** Iteration 4: Find all the paths");
-
-            allPathsWithTraffic = new int?[size, size];
-
-            //FindAllPaths(source, destination);
-
-            Console.WriteLine("Press any key to end iteration 4");
-            Console.ReadKey();
-
-            #endregion
-
-            #region Iteration 5: Find the Sneaky Path (the path with the least amount of traffic)
-
-            Console.WriteLine("\n\n*** Iteration 5: Find the Sneaky Path");
-
-            Queue<int> shortestPath = DijstraSPA(EdgeTraffic, source, destination);
-
-            Console.WriteLine("Sneaky Path: {0}", Helper.QueueToString(shortestPath));
-
-            Console.WriteLine("Press any key to end iteration 5");
             Console.ReadKey();
 
             #endregion
@@ -358,7 +282,6 @@ namespace SneakyPathProject
 
         static void FindAllPathsUtil(int current, int destination, bool[] visited, int[] path, int path_index)
         {
-            // Modified DFS to find all the paths in a graph
             visited[current] = true;
             path[path_index] = current + 1;
             path_index++;
@@ -368,17 +291,11 @@ namespace SneakyPathProject
                 Queue<int> tempPath = new Queue<int>();
                 for (int i = 0; i < path_index; i++)
                 {
-                    int currentNode = path[i];
-                    if (i > 0)
-                    {
-                        int previousNode = path[i - 1];
-                        allPathsWithTraffic[previousNode - 1, currentNode - 1] = EdgeTraffic[previousNode - 1, currentNode - 1];
-                    }
-                    tempPath.Enqueue(currentNode);
-                    Console.Write(currentNode);
+                    tempPath.Enqueue(path[i]);
+                    //Console.Write(path[i]);
                 }
                 allPaths.Add(tempPath);
-                Console.Write(Environment.NewLine);
+                //Console.Write(Environment.NewLine);
             }
             else
             {
@@ -395,90 +312,136 @@ namespace SneakyPathProject
 
             path_index--;
             visited[current] = false;
-        } // FindAllPathsUtil
+        }
 
-        public static Queue<int> DijstraSPA(int?[,] Graph, int startNode, int EndNode)
+        // DijstraSPA attempt
+        //DijstraSPA(MyDist, startingPoint, destination);
+
+        //Queue<int>[] ActualPath = new Queue<int>[size];
+        //Stack<int>[] ReversePath = new Stack<int>[size];
+
+        //for (int i = 0; i < Parent.Count(); i++)
+        //{
+        //    ReversePath[i] = new Stack<int>();
+        //    ActualPath[i] = new Queue<int>();
+
+        //    ReversePath[i].Push(i + 1);
+        //    int? parent = Parent[i];
+        //    while (parent != null)
+        //    {
+        //        ReversePath[i].Push(parent.Value);
+        //        parent = Parent[parent.Value - 1];
+        //    }
+
+        //    while (ReversePath[i].Count != 0)
+        //    {
+        //        ActualPath[i].Enqueue(ReversePath[i].Pop());
+        //    }
+        //}
+
+        static char[] Color;
+
+        public static void FindAllPaths(int?[,] adjMatrix, int start, int end)
         {
-            // Variable declaration and initialization
-            bool[] visited = new bool[size];
-            int[] distance = new int[size];
-            int[] parent = new int[size];
-            Queue<int> ShortestPath = new Queue<int>();
-
-            // Assign default values to visited and distance array
-            for (int v = 0; v < size; v++)
+            Color = new char[size];
+            for (int i = 0; i < size; i++)
             {
-                visited[v] = false;
-                distance[v] = big;
+                Color[i] = 'w';
             }
 
-            // MinHeap for the algorithm
-            // First int is for the distance
-            // Second int is for the node number
-            var minHeap = new C5.IntervalHeap<Tuple<int, int>>();
+            var path = new List<int>[size];
+            int path_index = 0;
+            path[path_index] = new List<int>();
+            path[path_index].Add(start);
 
-            distance[startNode - 1] = 0;
-            minHeap.Add(new Tuple<int, int>(distance[startNode - 1], startNode));
+            Travese(adjMatrix, start, end, path, ref path_index);
+        }
+
+        public static void Travese(int?[,] adjMatrix, int start, int end, List<int>[] pathArray, ref int arrayIndex)
+        {
+            // Useing modified DFS/BFS
+            Color[start - 1] = 'g';
+            pathArray[arrayIndex].Add(start);
+            arrayIndex++;
+            pathArray[arrayIndex] = new List<int>();
+
+            if (start == end)
+            {
+                return;
+            }
+            else
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    //if (Color[i] == 'w' && EdgeWeight[start - 1, i] != null)
+                    //{
+                    //    pathArray[arrayIndex].Add(i + 1);
+                    //    Travese(adjMatrix, i + 1, end, pathArray, ref arrayIndex);
+                    //}
+                    pathArray[arrayIndex].Add(i + 1);
+                    Travese(adjMatrix, i + 1, end, pathArray, ref arrayIndex);
+                }
+            }
+
+            Color[start - 1] = 'b';
+        }
+
+        public static void DijstraSPA(int[,] Graph, int startNode, int EndNode)
+        {
+            char[] Color = new char[size];
+            Distance = new int[size];
+            Parent = new int?[size];
+
+            for (int v = 0; v < size; v++)
+            {
+                Color[v] = 'w';
+                Distance[v] = big;
+            }
+
+            var minHeap = new C5.IntervalHeap<Tuple<int, int>>();
+            Distance[startNode - 1] = 0;
+            Parent[startNode - 1] = null;
+            Color[startNode - 1] = 'g';
+            minHeap.Add(new Tuple<int, int>(Distance[startNode - 1], startNode));
 
             while (!minHeap.IsEmpty)
             {
                 int selMin = minHeap.FindMin().Item2;
                 minHeap.DeleteMin();
 
-                // This node is being visited for examination
-                visited[selMin - 1] = true;
+                // Black node = out of the heap for examination
+                Color[selMin - 1] = 'b';
 
-                // Found the destination. Terminate
-                if (selMin == EndNode)
-                {
-                    int current = destination;
-                    Stack<int> shortestPathStack = new Stack<int>();
-
-                    while (current != 0)
-                    {
-                        shortestPathStack.Push(current);
-                        current = parent[current - 1];
-                    }
-
-                    Queue<int> shortestPath = new Queue<int>();
-                    int stackCount = shortestPathStack.Count;
-                    for (int i = 0; i < stackCount; i++)
-                    {
-                        shortestPath.Enqueue(shortestPathStack.Pop());
-                    }
-
-                    return shortestPath;
-                }
+                //if (selMin == EndNode)
+                //{
+                //     return Parent;
+                //}
 
                 for (int i = 0; i < size; i++)
                 {
-                    // This node has been visited and examined
-                    if (visited[i] == true)
+                    if (Color[i] == 'b')
                     {
                         continue;
                     }
 
-                    // There is no edge between the current node and the potential node
-                    // big and null mean the same thing
-                    // Prevent overflow If use big as max int value
-                    int? potentialDist = Graph[selMin - 1, i];
-                    if (potentialDist == big || potentialDist == null)
+                    int currentNodeDist = Distance[selMin - 1];
+                    int selectionDist = Distance[i];
+                    int potentialDist = EdgeWeight[selMin - 1, i].Value;
+
+                    if (potentialDist == big)
                     {
                         continue;
                     }
 
-                    int currentNodeDist = distance[selMin - 1];
-                    int selectionDist = distance[i];
-
-                    if (currentNodeDist + potentialDist.Value < selectionDist)
+                    if (currentNodeDist + potentialDist < selectionDist)
                     {
-                        distance[i] = currentNodeDist + potentialDist.Value;
-                        parent[i] = selMin;
-                        minHeap.Add(new Tuple<int, int>(distance[i], i + 1));
+                        Distance[i] = currentNodeDist + potentialDist;
+                        Parent[i] = selMin;
+                        minHeap.Add(new Tuple<int, int>(Distance[i], i + 1));
+                        Color[i] = 'g';
                     }
-                } // for loop
-            } // while loop
-            return null;
+                } // for
+            } // while
         } // DijstraSPA
     }
 }

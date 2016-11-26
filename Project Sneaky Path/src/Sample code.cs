@@ -133,7 +133,7 @@ for (ii from 1 to n)
       i = FirstStop[n][i,j];
       Hops[ii,jj] = Hops[ii,jj] + 1;
       EdgeTraffic[ifrom, i] = EdgeTraffic[ifrom,i] + PathTraffic[ii, jj];
-      ActualPath[ii,jj] = ActualPath[ii,jj] + i // maybe???
+      ActualPath[ii,jj] = ActualPath[ii,jj] , i // This is a queue
     }
     // print('For ', ii, jj, ' the actual path is ', ActualPath[ii,jj]);
   }
@@ -163,7 +163,7 @@ for (i from 1 to n)
       FlowPerEdge[0][i,j] = max(0, EdgeTraffic[i,j]);
     }
   }
-  FlowPerEdge[0][i,j] = 0;
+  FlowPerEdge[0][i,i] = 0;
 }
 whattype(FlowPerEdge[0]);
 
@@ -271,7 +271,7 @@ for (ii from 1 to n)
       ActualPath2[ii, jj] = ActualPath2[ii, jj], i; // maybe ActualPath2[ii, jj] + i
     }
 
-    if (Hops2[ii, jj] > 0
+    if (Hops2[ii, jj] > 0)
     {
       AvgSneakyPath[ii, jj] = AvgSneakyPath[ii, jj] / Hops2[ii, jj];
     }
