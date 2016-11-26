@@ -131,7 +131,7 @@ namespace SneakyPathProject
 
             foreach (var element in inputQueueArray)
             {
-                string Path = QueueToString(element);
+                string Path = QueueToPathString(element);
                 //Console.Write(String.Format("{" + String.Format("0, {0}", numOfDigits + 1) + "}", Path));
                 Console.Write(" " + Path + " ");
             }
@@ -140,7 +140,25 @@ namespace SneakyPathProject
             Console.Write(Environment.NewLine);
         }
 
-        public static string QueueToString(Queue<int> queue)
+        public static string TupleToEdgeString(Tuple<int, int> tuple)
+        {
+            return "(" + tuple.Item1 + ", " + tuple.Item2 + ")";
+        }
+
+        public static string ListToPathString(IList<int> list)
+        {
+            string Path = String.Empty;
+            foreach (var element in list)
+            {
+                Path += element.ToString();
+            }
+            Path = String.Join<char>(",", Path);
+            Path = "(" + Path + ")";
+
+            return Path;
+        }
+
+        public static string QueueToPathString(Queue<int> queue)
         {
             string Path = String.Empty;
             foreach (var element in queue)

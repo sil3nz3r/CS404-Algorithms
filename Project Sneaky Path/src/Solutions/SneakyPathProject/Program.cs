@@ -66,7 +66,6 @@ namespace SneakyPathProject
         /// </summary>
         static Queue<int> SneakyPath = new Queue<int>();
 
-        static int?[,] allPathsWithTraffic;
         /// <summary>
         /// multipurpose counting variable
         /// </summary>
@@ -92,10 +91,10 @@ namespace SneakyPathProject
             destination = Int32.Parse(firstLine[2]);
             inputFile.RemoveAt(0);
 
-            #region Iteration 1: Initialization, k = 0
+            #region Part 1: Initialization, k = 0
             k = 0;
 
-            Console.WriteLine("\n\n*** Iteration 1: Initialization");
+            Console.WriteLine("\n\n*** Part 1: Initialization");
 
             // Initialize matrices
             MyDist = new int[size + 1][,];
@@ -140,7 +139,7 @@ namespace SneakyPathProject
 
                 // EdgeTraffic does not have to be initialized right now
                 LoadMatrix[i, j] = 0;
-                // FirstStop is assumed to be the direct destination
+                // FirstStop[0] is assumed to be the immediate destination
                 FirstStop[k][i, j] = j + 1;
             }
 
@@ -166,17 +165,17 @@ namespace SneakyPathProject
             Console.WriteLine(String.Format("EdgeTraffic[{0}]: ", k));
             Helper.PrintIntMatrix(LoadMatrix, 4);
 
-            Console.WriteLine("\u221E");
-
-            Console.WriteLine("Press any key to end iteration 1");
-            Console.ReadKey();
+            //Console.WriteLine("Press any key to end Part 1");
+            //Console.ReadKey();
 
             #endregion
 
-            #region Iteration 2: Finding the all-pairs shortest paths
-            Console.WriteLine("\n\n*** Iteration 2: Finding the all-pairs shortest paths", size);
+            #region Part 2: Finding the all-pairs shortest paths
+            Console.WriteLine("\n\n*** Part 2: Finding the all-pairs shortest paths", size);
 
             // Using Floyd-Warshall, find the all-pairs shortest paths
+            // Instead of using another loop to initialize MyDist and FirstStop,
+            // initialize them in here by including k = the number of vertices
             for (k = 1; k <= size; k++)
             {
                 MyDist[k] = new int[size, size];
@@ -224,38 +223,41 @@ namespace SneakyPathProject
                 } // i
             } // k
 
-            k = 6;
+            k = 0;
             Console.WriteLine("> k = {0}", k);
             Console.WriteLine(String.Format("MyDist[{0}]: ", k));
-            Helper.PrintIntMatrix(MyDist[k], 4);
+            Helper.PrintIntMatrix(MyDist[k], 6);
 
             Console.WriteLine(String.Format("FirstStop[{0}]: ", k));
             Helper.PrintIntMatrix(FirstStop[k], 2);
 
-            Console.WriteLine("Press any key to end iteration 2");
-            Console.ReadKey();
+            k = 6;
+            Console.WriteLine("> k = {0}", k);
+            Console.WriteLine(String.Format("MyDist[{0}]: ", k));
+            Helper.PrintIntMatrix(MyDist[k], 6);
+
+            Console.WriteLine(String.Format("FirstStop[{0}]: ", k));
+            Helper.PrintIntMatrix(FirstStop[k], 2);
+
+            //Console.WriteLine("Press any key to end Part 2");
+            //Console.ReadKey();
 
             #endregion
 
-            #region Iteration 3: Calculate the traffic on each edge
+            #region Part 3: Calculate the traffic on each edge
 
-            Console.WriteLine("\n\n*** Iteration 3: Calculate the traffic on each edge");
+            Console.WriteLine("\n\n*** Part 3: Calculate the traffic on each edge");
 
             ShortestPaths = new Queue<int>[size, size];
 
+            // Calculate the load on each edge using the previous calculated app-pairs shortest paths
             for (int ii = 0; ii < size; ii++)
             {
                 for (int jj = 0; jj < size; jj++)
                 {
                     ShortestPaths[ii, jj] = new Queue<int>();
                     ShortestPaths[ii, jj].Enqueue(ii + 1);
-                }
-            }
-            // Calculate the load on each edge using the previous calculated app-pairs shortest paths
-            for (int ii = 0; ii < size; ii++)
-            {
-                for (int jj = 0; jj < size; jj++)
-                {
+
                     int i = ii;
                     int j = jj;
 
@@ -277,9 +279,6 @@ namespace SneakyPathProject
                 } // jj
             } // ii
 
-            Console.WriteLine(String.Format("MyDist[{0}]: ", size));
-            Helper.PrintIntMatrix(MyDist[size], 2);
-
             Console.WriteLine(String.Format("ShortestPaths: ", k));
             Helper.PrintQueueMatrix(ShortestPaths, 10);
 
@@ -289,34 +288,80 @@ namespace SneakyPathProject
             Console.WriteLine(String.Format("EdgeTraffic: ", k));
             Helper.PrintIntMatrix(LoadMatrix, 4);
 
-            Console.WriteLine("Press any key to end iteration 3");
-            Console.ReadKey();
+            //Console.WriteLine("Press any key to end Part 3");
+            //Console.ReadKey();
 
             #endregion
 
-            #region Iteration 5: Find the Sneaky Path (the path with the least amount of traffic)
+            #region Part 5: Find the Sneaky Path (the path with the least amount of traffic)
 
-            Console.WriteLine("\n\n*** Iteration 4: Find the Sneaky Path");
+            Console.WriteLine("\n\n*** Part 4: Find the Sneaky Path");
 
-            Queue<int> shortestPath = DijstraSPA(LoadMatrix, source, destination);
+            List<int> shortestPath = FindShortestPath(LoadMatrix, source, destination);
 
             if (shortestPath != null)
             {
-                Console.WriteLine("Sneaky Path: {0}", Helper.QueueToString(shortestPath));
+                Console.WriteLine("Sneaky Path: {0}", Helper.ListToPathString(shortestPath));
+
+                int minLoad = Helper.big;
+                int maxLoad = 0;
+                int totalLoad = 0;
+                int hop = 0;
+
+                Tuple<int, int> minEdge = new Tuple<int, int>(source, destination);
+                Tuple<int, int> maxEdge = new Tuple<int, int>(source, destination);
+
+                for (int i = 1; i < shortestPath.Count; i++)
+                {
+                    int previousNode = shortestPath[i - 1];
+                    int currentNode = shortestPath[i];
+
+                    int loadOnEdge = LoadMatrix[previousNode - 1, currentNode - 1].Value;
+                    totalLoad += loadOnEdge;
+                    hop++;
+                    if (loadOnEdge < minLoad)
+                    {
+                        minLoad = loadOnEdge;
+                        minEdge = new Tuple<int, int>(previousNode, currentNode);
+                    }
+                    if (loadOnEdge > maxLoad)
+                    {
+                        maxLoad = loadOnEdge;
+                        maxEdge = new Tuple<int, int>(previousNode, currentNode);
+                    }
+                }
+
+                double averageCar = Math.Round((double)totalLoad / (double)hop, 1);
+
+                Console.WriteLine("The edge on the Sneaky Path with the lower number of cars of {0} is: {1}", minLoad, Helper.TupleToEdgeString(minEdge));
+                Console.WriteLine("The edge on the Sneaky Path with the highest number of car of {0} is: {1}", maxLoad, Helper.TupleToEdgeString(maxEdge));
+                Console.WriteLine("The average number of other cars on each link of the Sneaky Path is: {0}", averageCar);
             }
             else
             {
                 Console.WriteLine("Could not find the Sneaky Path");
             }
 
-            Console.WriteLine("Press any key to end iteration 4");
+            //Console.WriteLine("Press any key to end Part 4");
             Console.ReadKey();
 
             #endregion
 
         }
 
-        public static Queue<int> DijstraSPA(int?[,] Graph, int startNode, int EndNode)
+        public static List<int> FindShortestPath(int?[,] graph, int startNode, int endNode)
+        {
+            Stack<int> shortestPathStack = DijstraUtil(graph, startNode, endNode);
+            List<int> shortestPath = new List<int>();
+            int stackCount = shortestPathStack.Count;
+            for (int i = 0; i < stackCount; i++)
+            {
+                shortestPath.Add(shortestPathStack.Pop());
+            }
+            return shortestPath;
+        }
+
+        public static Stack<int> DijstraUtil(int?[,] graph, int startNode, int endNode)
         {
             // Variable declaration and initialization
             bool[] visited = new bool[size];
@@ -348,7 +393,7 @@ namespace SneakyPathProject
                 visited[selMin - 1] = true;
 
                 // Found the destination. Terminate
-                if (selMin == EndNode)
+                if (selMin == endNode)
                 {
                     int current = destination;
                     Stack<int> shortestPathStack = new Stack<int>();
@@ -359,14 +404,7 @@ namespace SneakyPathProject
                         current = parent[current - 1];
                     }
 
-                    Queue<int> shortestPath = new Queue<int>();
-                    int stackCount = shortestPathStack.Count;
-                    for (int i = 0; i < stackCount; i++)
-                    {
-                        shortestPath.Enqueue(shortestPathStack.Pop());
-                    }
-
-                    return shortestPath;
+                    return shortestPathStack;
                 }
 
                 for (int i = 0; i < size; i++)
@@ -380,7 +418,7 @@ namespace SneakyPathProject
                     // There is no edge between the current node and the potential node
                     // Helper.big and null mean the same thing
                     // Prevent overflow If use Helper.big as max int value
-                    int? potentialDist = Graph[selMin - 1, i];
+                    int? potentialDist = graph[selMin - 1, i];
                     if (potentialDist == Helper.big || potentialDist == null)
                     {
                         continue;

@@ -43,7 +43,7 @@ namespace SneakyPathProject
         static void Main(string[] args)
         {
             // Read the file
-            List<string> inputFile = File.ReadAllLines(@"N50.txt").ToList();
+            List<string> inputFile = File.ReadAllLines(@"N10b.txt").ToList();
             // Remove empty entries
             inputFile = inputFile.Where(s => !String.IsNullOrWhiteSpace(s)).Distinct().ToList();
 
