@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 using System.IO;
 using System.Diagnostics;
 
@@ -68,6 +65,11 @@ namespace SneakyPathProject
         /// </summary>
         static int k;
 
+        static int Edgecount = 0;
+        static int FloydWarshallCount = 0;
+        static int DijkstraCount = 0;
+        static int additionalAlgorithmCount = 0;
+
         private PerformanceCounter theCPUCounter = new PerformanceCounter("Processor", "% Processor Time", Process.GetCurrentProcess().ProcessName);
 
         #endregion global variables
@@ -121,8 +123,6 @@ namespace SneakyPathProject
 
                 Console.WriteLine("CS404, Fall Semester 2016: Find the Sneaky Path\n");
 
-                Console.WriteLine("The number of cities is, {0}\n", size);
-
                 Console.WriteLine("The Edge Matrix is E, ");
                 Helper.PrintIntMatrix(EdgeWeight, 4);
                 Console.WriteLine(", where \"na\" indicates that there exists no link between thses points.\n");
@@ -171,6 +171,8 @@ namespace SneakyPathProject
 
                 double averageCar = Math.Round((double)totalLoad / (double)hop, 1);
 
+                Console.WriteLine("The number of cities is, {0}\n", size);
+
                 Console.WriteLine("The edge on the Sneaky Path with the lower number of cars of {0} is: {1}\n", minLoad, Helper.TupleToEdgeString(minEdge));
 
                 Console.WriteLine("The edge on the Sneaky Path with the highest number of car of {0} is: {1}\n", maxLoad, Helper.TupleToEdgeString(maxEdge));
@@ -183,6 +185,11 @@ namespace SneakyPathProject
             }
 
             Console.WriteLine("Total Processor Time: {0}\n", Process.GetCurrentProcess().TotalProcessorTime);
+
+            Console.WriteLine("Edge Count = {0}\n", Edgecount);
+            Console.WriteLine("Floyd-Warshall Count = {0}\n", FloydWarshallCount);
+            Console.WriteLine("Additional algorithm to calculate the FlowMatrix Count = {0}\n", additionalAlgorithmCount);
+            Console.WriteLine("DijkStra's SPA Count = {0}\n", DijkstraCount);
 
             //Console.WriteLine("Press any key to end Part 5");
             Console.ReadKey();
@@ -197,7 +204,7 @@ namespace SneakyPathProject
         public static void Init()
         {
             // Read the file
-            List<string> inputFile = File.ReadAllLines("N10c.txt").ToList();
+            List<string> inputFile = File.ReadAllLines("N6.txt").ToList();
             // Remove empty entries
             inputFile = inputFile.Where(s => !String.IsNullOrWhiteSpace(s)).Distinct().ToList();
 
@@ -222,7 +229,7 @@ namespace SneakyPathProject
             FlowMatrix = new int[size, size];
 
             LoadMatrix = new int?[size, size];
-            
+
             FirstStop = new int[size, size];
 
             // Extract the rest of the input file
@@ -242,6 +249,7 @@ namespace SneakyPathProject
                 {
                     MyDist[i, j] = Int32.Parse(values[3]);
                     EdgeWeight[i, j] = Int32.Parse(values[3]);
+                    Edgecount++;
                 }
                 else if (values[0] == "F") // Flow matrix F
                 {
@@ -283,6 +291,7 @@ namespace SneakyPathProject
                 {
                     for (int j = 0; j < size; j++)
                     {
+                        FloydWarshallCount++;
 
                         // First route: go from one node to the other
                         int directPath = MyDist[i, j];
@@ -325,18 +334,18 @@ namespace SneakyPathProject
             k = 0;
             Console.WriteLine("> k = {0}", k);
             Console.WriteLine(String.Format("MyDist[{0}]: ", k));
-            Helper.PrintIntMatrix(MyDist[k], 6);
+            Helper.PrintIntMatrix(MyDist, 6);
 
             Console.WriteLine(String.Format("FirstStop[{0}]: ", k));
-            Helper.PrintIntMatrix(FirstStop[k], 2);
+            Helper.PrintIntMatrix(FirstStop, 2);
 
             k = 6;
             Console.WriteLine("> k = {0}", k);
             Console.WriteLine(String.Format("MyDist[{0}]: ", k));
-            Helper.PrintIntMatrix(MyDist[k], 6);
+            Helper.PrintIntMatrix(MyDist, 6);
 
             Console.WriteLine(String.Format("FirstStop[{0}]: ", k));
-            Helper.PrintIntMatrix(FirstStop[k], 2);
+            Helper.PrintIntMatrix(FirstStop, 2);
             */
             //Console.WriteLine("Press any key to end Part 2");
             //Console.ReadKey();
@@ -359,6 +368,7 @@ namespace SneakyPathProject
 
                     while (FirstStop[ii, jj] != 0)
                     {
+                        additionalAlgorithmCount++;
                         int ifrom = ii;
                         ii = FirstStop[ii, jj] - 1;
                         LoadMatrix[ifrom, ii] = LoadMatrix[ifrom, ii] + FlowMatrix[i, j];
@@ -400,6 +410,12 @@ namespace SneakyPathProject
         public static List<int> FindShortestPath(int?[,] graph, int startNode, int endNode)
         {
             Stack<int> shortestPathStack = GetSPWithDijkstra(graph, startNode, endNode);
+
+            if (shortestPathStack == null)
+            {
+                return null;
+            }
+
             List<int> shortestPath = new List<int>();
             int stackCount = shortestPathStack.Count;
             for (int i = 0; i < stackCount; i++)
@@ -452,19 +468,21 @@ namespace SneakyPathProject
                 if (selMin == endNode)
                 {
                     int current = destination;
-                    //Stack<int> shortestPathStack = new Stack<int>();
+                    Stack<int> shortestPathStack = new Stack<int>();
 
-                    //while (current != 0)
-                    //{
-                    //    shortestPathStack.Push(current);
-                    //    current = parent[current - 1];
-                    //}
+                    while (current != 0)
+                    {
+                        shortestPathStack.Push(current);
+                        current = parent[current - 1];
+                    }
 
-                    //return shortestPathStack;
+                    return shortestPathStack;
                 }
 
                 for (int i = 0; i < size; i++)
                 {
+                    DijkstraCount++;
+
                     // This node has been visited and examined
                     if (visited[i] == true)
                     {
